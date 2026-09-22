@@ -204,14 +204,10 @@ public:
             if (!NeedsSorting() && m_querySpec->IsFlagSet(XmlQuerySpec::TopNRowsSpecified)) {
                 maxRows = std::min(maxRows, m_querySpec->GetTopNRows());
             }
-            // Reconcile sum/min/max column types: these default to real (see XmlExprTypes::InferType)
-            // because a plain column reference's type can't be known until data is read. Now that the
-            // whole input has been consumed, decide per column whether every contributing value, across
-            // every group being output, was a whole number -- if so, format as an integer instead of
-            // always showing a trailing ".0". Scoped to the direct/unwrapped case (e.g. sum[a]); a
-            // composed expression like sum[a]*2 is left as real, unchanged from prior behavior. Also
-            // note: an explicit real[] cast (e.g. sum[real[a]]) is indistinguishable at this point from
-            // the default case and will also be promoted to integer if every value happens to be whole.
+            // sum/min/max default to real (a plain column ref's type isn't known until data is
+            // read); now that the input's been fully consumed, promote to integer wherever every
+            // contributing value across every group turned out whole. Direct case only (sum[a]);
+            // a composed expr like sum[a]*2 stays real.
             for (auto& column : GetColumns()) {
                 if (!column->IsAggregate() || column->expr->GetType() == XmlType::Integer) {
                     continue;

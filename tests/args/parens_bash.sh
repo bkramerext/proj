@@ -1,2 +1,2 @@
 #!/bin/sh
-proj --in=data.xml min\(a,b\) \(a*b\)+c 
+proj --in=data.xml min\(a,b\) \(a*b\)+c --sep=,

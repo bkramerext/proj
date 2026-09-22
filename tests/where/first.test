@@ -1,2 +1,3 @@
  --in=data.json name num first[5] sort[-num]
  
+--sep=,

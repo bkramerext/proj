@@ -3,5 +3,3 @@
 
 # and add filter. In this case, give the domains that start with C
 where[left[DOMAIN,1]=="C"]
-
-

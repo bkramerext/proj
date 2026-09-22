@@ -1,1 +1,3 @@
 --in=data.xml --outheader=false foo bar
+
+--sep=,

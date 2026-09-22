@@ -1,1 +1,3 @@
 --in=colors.csv foo ...:pivot[name,value]
+
+--sep=,

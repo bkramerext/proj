@@ -1,1 +1,3 @@
 --in=embedded_json_scoped.log b c
+
+--sep=,

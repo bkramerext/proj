@@ -1,1 +1,3 @@
 --in=comma.csv x:comma[a]
+
+--sep=,

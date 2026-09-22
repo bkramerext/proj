@@ -1,1 +1,3 @@
 --in=abc.xml a,b,c,d:pivot[nodename[values.*],values.*,true]
+
+--sep=,

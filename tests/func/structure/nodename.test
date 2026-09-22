@@ -1,1 +1,3 @@
 --in=data.xml x y z nodename[x] nodename[y] nodename[z]
+
+--sep=,

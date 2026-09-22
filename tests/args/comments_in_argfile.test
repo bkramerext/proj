@@ -17,3 +17,5 @@ max[a,max[b,c]] # and take their max
 
 # specify input file
 --in=data.xml
+
+--sep=,

@@ -1,1 +1,2 @@
 --in=data.csv size corr[a,b]
+--sep=,

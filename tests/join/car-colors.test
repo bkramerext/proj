@@ -1,1 +1,2 @@
 --in=cars.json join[colors.json] make type "car-color":right::json.* where[left::color==nodename[right::json.*]]
+--sep=,

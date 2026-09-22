@@ -1,1 +1,3 @@
 --in=values.csv a b a<b b<a lt[a,b] lt[b,a]
+
+--sep=,

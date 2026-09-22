@@ -1,1 +1,3 @@
 --in=single.csv foo ...:pivot[name,value]
+
+--sep=,

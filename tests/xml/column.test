@@ -1,1 +1,3 @@
 --in=data.xml xx:x y:xx&"!" xx2:xx y&"!" z:y&"?" z&"?"&xx2
+
+--sep=,

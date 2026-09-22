@@ -1,1 +1,3 @@
 --in=data.csv --distinct color size
+
+--sep=,

@@ -1,1 +1,3 @@
 --in=variety.csv a b c
+
+--sep=,

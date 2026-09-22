@@ -1,1 +1,3 @@
 --in=colors.xml outer foo ...:pivot[name,value]
+
+--sep=,

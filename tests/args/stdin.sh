@@ -1,2 +1,2 @@
 #!/bin/sh
-cat data.xml | proj a b c
+cat data.xml | proj a b c --sep=,

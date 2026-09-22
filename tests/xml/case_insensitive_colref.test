@@ -1,1 +1,3 @@
 --in=data.xml --case=false y:x Y&"!"
+
+--sep=,

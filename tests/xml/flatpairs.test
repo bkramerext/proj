@@ -1,1 +1,3 @@
 --in=flatpairs.xml fld val
+
+--sep=,

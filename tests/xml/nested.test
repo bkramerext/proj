@@ -1,1 +1,3 @@
 --in=nested.xml a int[sum[c]]
+
+--sep=,

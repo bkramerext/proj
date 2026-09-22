@@ -1,1 +1,3 @@
 --in=data.csv count[a] count[b] count[a]+count[b] count[a+b]
+
+--sep=,

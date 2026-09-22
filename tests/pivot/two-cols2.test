@@ -1,1 +1,3 @@
 --in=foods.xml type,color:pivot[name,value]
+
+--sep=,

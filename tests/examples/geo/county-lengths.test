@@ -1,1 +1,3 @@
 --in=counties.mac.csv --inheader=false {1} {2} len({1}) len({2})
+
+--sep=,

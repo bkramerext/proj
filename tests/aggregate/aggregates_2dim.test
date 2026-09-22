@@ -1,1 +1,3 @@
 --in=data.csv color size count[a] sum[a] avg[a] stdev[a]
+
+--sep=,

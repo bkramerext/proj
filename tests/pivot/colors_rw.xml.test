@@ -1,1 +1,3 @@
 --in=colors.xml R,W:pivot[name,value]
+
+--sep=,

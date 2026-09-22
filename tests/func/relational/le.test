@@ -1,1 +1,3 @@
 --in=values.csv a b a<=b b<=a le[a,b] le[b,a]
+
+--sep=,

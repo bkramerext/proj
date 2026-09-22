@@ -1,1 +1,3 @@
 --in=single.xml foo ...:pivot[name,value]
+
+--sep=,

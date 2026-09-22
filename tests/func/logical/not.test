@@ -1,1 +1,3 @@
 --in=data.xml a !a not[a]
+
+--sep=,

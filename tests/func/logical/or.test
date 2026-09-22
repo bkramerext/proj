@@ -1,1 +1,3 @@
 --in=data.xml a b a||b b||a or[a,b] or[b,a]
+
+--sep=,

@@ -1,1 +1,3 @@
 --in=sum_int_format.csv g sum[v]*2
+
+--sep=,

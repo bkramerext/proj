@@ -10,3 +10,5 @@ where[right::{2}=={1}]
 # Output County name, State name, and concatenation of state fips and county fips.
 # with column names "County," "State," and "FIPS Code."
 County:{4} State:right::{1} {FIPS\ Code}:{2}&{3} 
+
+--sep=,

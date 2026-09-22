@@ -18,3 +18,5 @@ sort[if[DOMAIN,DOMAIN,"~"]]
 
 --distinct 
 non_distinct:min[0,RECORD_SEQ_ID+RUN_ID]
+
+--sep=,

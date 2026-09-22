@@ -1,1 +1,3 @@
 --in=data.csv var[a] var[b] var[a]+var[b] var[a+b]
+
+--sep=,

@@ -1,1 +1,3 @@
 --in=dt.csv datetime[time] datetime[int[datetime[time]]+1]
+
+--sep=,

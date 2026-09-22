@@ -601,12 +601,11 @@ public:
         return strncasecmp(a, b, len) == 0;
     }
 
-    static std::string CsvNormalize(const std::string& s)
+    static std::string CsvNormalize(const std::string& s, const std::string& sep = ",")
     {
-        bool needsQuotes = false;
-        char sep = ',';
+        bool needsQuotes = !sep.empty() && s.find(sep) != std::string::npos;
         for (size_t i = 0; i < s.size() && !needsQuotes; i++) {
-            needsQuotes = s[i] == sep || s[i] == '\"' || s[i] == '\n';
+            needsQuotes = s[i] == '\"' || s[i] == '\n';
         }
         if (!needsQuotes) {
             return s;
@@ -623,9 +622,9 @@ public:
         return ss.str().c_str();
     }
 
-    static std::string FormatForCsv(const std::string& value)
+    static std::string FormatForCsv(const std::string& value, const std::string& sep = ",")
     {
-        return std::move(CsvNormalize(std::move(XmlUtils::UnescapeAndDecodeEntities(value))));
+        return std::move(CsvNormalize(std::move(XmlUtils::UnescapeAndDecodeEntities(value)), sep));
     }
 
     static void Error(const std::string& msg, const std::string& token1 = "")

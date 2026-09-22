@@ -1,1 +1,3 @@
 --in=nestedarr.json {0}.x {0}.y
+
+--sep=,

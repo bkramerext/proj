@@ -1,1 +1,3 @@
 --in=data.xml x:a*10 y:b z:x x+y z+100 zz:z zz+1000
+
+--sep=,

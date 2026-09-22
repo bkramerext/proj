@@ -1,1 +1,3 @@
 --in=nums.json json.*.* nodename[json.*.*] nodename[json.*.*,1]
+
+--sep=,

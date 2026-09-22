@@ -1,1 +1,3 @@
 --in=data.xml x x..attr1 x..attr2
+
+--sep=,

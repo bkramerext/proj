@@ -1,1 +1,3 @@
 --in=data.xml x path[x]
+
+--sep=,

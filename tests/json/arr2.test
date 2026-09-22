@@ -1,1 +1,3 @@
 --in=arr.json row.x row.y
+
+--sep=,

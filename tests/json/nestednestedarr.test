@@ -1,1 +1,3 @@
 --in=nestednestedarr.json row.*.x row.*.y
+
+--sep=,

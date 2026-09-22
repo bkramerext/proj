@@ -1,1 +1,2 @@
 --in=values.csv a -a -str[a] -bool[a] -int[a] -real[a]
+--sep=,

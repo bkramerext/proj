@@ -1,1 +1,3 @@
 in[foobar.csv] label "|" join[joindata.csv] right::a right::b where[right::b==label]
+
+--sep=,

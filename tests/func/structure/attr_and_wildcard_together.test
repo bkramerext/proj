@@ -1,2 +1,4 @@
 --in=attr_and_wildcard_together.xml items..x ...:pivot[nodename[items.*],items.*]
 
+
+--sep=,

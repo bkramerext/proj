@@ -70,7 +70,7 @@ struct XmlOperator
         OpParent, OpNodeNum, OpNodeName, OpNodeStart, OpNodeEnd, // immediate functions (evaluated on path match)
         OpAny, OpSum, OpMinAggr, OpMaxAggr, OpAvg, OpStdev, OpVar, OpCov, OpCorr, OpCount, // aggregate functions
         OpFirst, OpTop, OpSort, OpPivot, OpDistinct, OpHidden, OpWhere, OpSync, OpRoot, OpIn, OpJoin, // directives
-        OpCsvOnly, OpCase, OpInputHeader, OpJoinHeader, OpOutputHeader, OpHelp // directives
+        OpCsvOnly, OpCase, OpInputHeader, OpJoinHeader, OpOutputHeader, OpSep, OpHelp // directives
         // clang-format on
     };
 
@@ -159,11 +159,13 @@ public:
     // Note: operator instances are pointers to support aggregate operator inheritance, where state is carried.
     // (Also, in the past, external operators implemented in Win32 DLLs were supported. That functionality was
     // removed to simplify the code base.)
-    static XmlOperatorPtr GetInstance(XmlOperator::Opcode opcode, const std::string& name = std::string())
+    // The full operator table, keyed by neither name nor opcode alone (both GetInstance's lookup
+    // and help-text generation need to walk the whole thing). A function-local magic static, same
+    // as the array this replaced -- constructed once, on first use.
+    static const std::vector<XmlOperatorPtr>& GetTemplates()
     {
-        assert(name.empty() || (name[0] != '('));
         const size_t U = (size_t)-1;
-        static XmlOperatorPtr templates[] = {
+        static std::vector<XmlOperatorPtr> templates = {
             // clang-format off
             XmlOperatorPtr(new XmlOperator( "<ColumnRef>",XmlOperator::OpColumnRef,    0, 0, XmlType::Unknown )),
             XmlOperatorPtr(new XmlOperator( "<PathRef>",  XmlOperator::OpPathRef,      0, 0, XmlType::Unknown )),
@@ -176,6 +178,7 @@ public:
             XmlOperatorPtr(new XmlOperator( "inheader",   XmlOperator::OpInputHeader,  0, 1, XmlType::Unknown,  XmlOperator::TopLevelOnly | XmlOperator::Directive | XmlOperator::OnceOnly )),
             XmlOperatorPtr(new XmlOperator( "outheader",  XmlOperator::OpOutputHeader, 0, 1, XmlType::Unknown,  XmlOperator::TopLevelOnly | XmlOperator::Directive | XmlOperator::OnceOnly )),
 /*synonym*/ XmlOperatorPtr(new XmlOperator( "header",     XmlOperator::OpOutputHeader, 0, 1, XmlType::Unknown,  XmlOperator::TopLevelOnly | XmlOperator::Directive | XmlOperator::OnceOnly )),
+            XmlOperatorPtr(new XmlOperator( "sep",        XmlOperator::OpSep,          1, 1, XmlType::Unknown,  XmlOperator::TopLevelOnly | XmlOperator::Directive | XmlOperator::OnceOnly | XmlOperator::UnquotedStringFirstArg )),
             XmlOperatorPtr(new XmlOperator( "join",       XmlOperator::OpJoin,         1, 2, XmlType::Unknown,  XmlOperator::TopLevelOnly | XmlOperator::Directive | XmlOperator::OnceOnly | XmlOperator::UnquotedStringFirstArg )),
             XmlOperatorPtr(new XmlOperator( "joinheader", XmlOperator::OpJoinHeader,   0, 1, XmlType::Unknown,  XmlOperator::TopLevelOnly | XmlOperator::Directive | XmlOperator::OnceOnly )),
             XmlOperatorPtr(new XmlOperator( "pivot",      XmlOperator::OpPivot,        2, 3, XmlType::Unknown,  XmlOperator::TopLevelOnly | XmlOperator::Directive | XmlOperator::OnceOnly )),
@@ -265,9 +268,99 @@ public:
             XmlOperatorPtr(new XmlOperator( "count",      XmlOperator::OpCount,        1, 1, XmlType::Integer,  XmlOperator::NoData | XmlOperator::Aggregate )),
             // clang-format on
         };
+        return templates;
+    }
+
+    // A short category label for a given opcode, matching the groupings documented alongside
+    // the Opcode enum above. Used only to build `-h`/help[] output; an empty string means
+    // "don't show this in help" (internal terminals like <ColumnRef>).
+    static std::string GetCategory(XmlOperator::Opcode opcode)
+    {
+        using Op = XmlOperator;
+        switch (opcode) {
+            case Op::OpNeg: case Op::OpNot:
+            case Op::OpMul: case Op::OpDiv: case Op::OpMod: case Op::OpAdd: case Op::OpSub: case Op::OpConcat:
+            case Op::OpEQ: case Op::OpNE: case Op::OpLE: case Op::OpGE: case Op::OpLT: case Op::OpGT:
+            case Op::OpOr: case Op::OpXor: case Op::OpAnd:
+                return "Operators";
+
+            case Op::OpMin: case Op::OpMax: case Op::OpSqrt: case Op::OpPow: case Op::OpLog: case Op::OpExp:
+            case Op::OpAbs: case Op::OpRound: case Op::OpFloor: case Op::OpCeil:
+                return "Math functions";
+
+            case Op::OpLen: case Op::OpLeft: case Op::OpRight: case Op::OpUpper: case Op::OpLower:
+            case Op::OpContains: case Op::OpFind:
+                return "String functions";
+
+            case Op::OpFormatSec: case Op::OpFormatMs: case Op::OpComma: case Op::OpRowNum: case Op::OpIf:
+                return "Misc functions";
+
+            case Op::OpReal: case Op::OpInt: case Op::OpBool: case Op::OpStr: case Op::OpDateTime: case Op::OpType:
+                return "Type conversion";
+
+            case Op::OpPath: case Op::OpPivotPath: case Op::OpDepth: case Op::OpAttr: case Op::OpLineNum:
+            case Op::OpParent: case Op::OpNodeNum: case Op::OpNodeName: case Op::OpNodeStart: case Op::OpNodeEnd:
+                return "Structural functions";
+
+            case Op::OpAny: case Op::OpSum: case Op::OpMinAggr: case Op::OpMaxAggr: case Op::OpAvg: case Op::OpStdev:
+            case Op::OpVar: case Op::OpCov: case Op::OpCorr: case Op::OpCount:
+                return "Aggregate functions";
+
+            case Op::OpFirst: case Op::OpTop: case Op::OpSort: case Op::OpPivot: case Op::OpDistinct: case Op::OpHidden:
+            case Op::OpWhere: case Op::OpSync: case Op::OpRoot: case Op::OpIn: case Op::OpJoin:
+            case Op::OpCsvOnly: case Op::OpCase: case Op::OpInputHeader: case Op::OpJoinHeader:
+            case Op::OpOutputHeader: case Op::OpSep: case Op::OpHelp:
+                return "Directives";
+
+            default:
+                return "";
+        }
+    }
+
+    // Formats every named operator, grouped by category, for `-h`/help[] output.
+    static std::string GetHelpText()
+    {
+        static const std::vector<std::string> categoryOrder = {
+            "Operators", "Math functions", "String functions", "Misc functions",
+            "Type conversion", "Structural functions", "Aggregate functions", "Directives"
+        };
+
+        std::stringstream out;
+        for (auto& category : categoryOrder) {
+            std::vector<std::string> names;
+            for (auto& op : GetTemplates()) {
+                if (GetCategory(op->opcode) == category) {
+                    std::stringstream entry;
+                    entry << op->name;
+                    if (op->maxArgs > 0) {
+                        entry << "[";
+                        if (op->minArgs != op->maxArgs) {
+                            entry << op->minArgs << "-";
+                        }
+                        entry << (op->maxArgs == (size_t)-1 ? std::string("N") : std::to_string(op->maxArgs));
+                        entry << (op->maxArgs == 1 && op->minArgs == 1 ? " arg]" : " args]");
+                    }
+                    names.push_back(entry.str());
+                }
+            }
+            if (names.empty()) {
+                continue;
+            }
+            out << category << ":\n";
+            for (auto& n : names) {
+                out << "  " << n << "\n";
+            }
+        }
+        return out.str();
+    }
+
+    static XmlOperatorPtr GetInstance(XmlOperator::Opcode opcode, const std::string& name = std::string())
+    {
+        assert(name.empty() || (name[0] != '('));
+        const std::vector<XmlOperatorPtr>& templates = GetTemplates();
 
         XmlOperatorPtr opTemplate;
-        for (size_t i = 0; i < sizeof(templates) / sizeof(templates[0]); i++) {
+        for (size_t i = 0; i < templates.size(); i++) {
             size_t len = templates[i]->name.size();
             if ((opcode == templates[i]->opcode) ||
                 XmlUtils::stringsEqCase(name.c_str(), templates[i]->name)) {

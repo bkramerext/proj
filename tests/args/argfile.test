@@ -1,2 +1,4 @@
 @argfile1
 --in=data.xml a
+
+--sep=,

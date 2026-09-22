@@ -1,1 +1,3 @@
 --in=data.xml s a b c --sync[y]
+
+--sep=,

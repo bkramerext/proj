@@ -1,1 +1,3 @@
 --in=math1.xml where[a..f=="round"] a round[a]
+
+--sep=,

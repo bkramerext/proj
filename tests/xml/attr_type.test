@@ -1,1 +1,3 @@
 --in=data.xml x x..attrdata type[x..attrdata]
+
+--sep=,

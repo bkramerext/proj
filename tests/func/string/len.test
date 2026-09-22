@@ -1,1 +1,2 @@
 --in=data.csv a b len[a] len[b]
+--sep=,

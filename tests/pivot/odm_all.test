@@ -1,1 +1,3 @@
 --in=odm.xml Study..OID ...:pivot[ItemData..ItemOid,ItemData..value,true] --first=20
+
+--sep=,

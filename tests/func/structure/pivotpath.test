@@ -1,1 +1,3 @@
 --in=tree.xml pivotpath[x] x
+
+--sep=,

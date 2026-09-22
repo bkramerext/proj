@@ -1,1 +1,3 @@
 --in=idprops.json a c
+
+--sep=,

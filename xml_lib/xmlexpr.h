@@ -205,7 +205,13 @@ public:
                 return std::move(Token(TokenId::Concat, str));
             case '|':
                 if (*m_pos != '|') {
-                    return std::move(Token(TokenId::Error, "no bitwise or"));
+                    // A lone '|' isn't a valid token (only '||' is). Other error tokens in this
+                    // function carry the raw offending text in .str (see "Unexpected token"
+                    // reporting below, and ParseUnquotedString, which reads .str even for error
+                    // tokens); this used to instead carry a fixed description ("no bitwise or"),
+                    // which broke unquoted-string directive arguments like sep[|] or --sep=|,
+                    // silently substituting that description text for the actual character.
+                    return std::move(Token(TokenId::Error, str));
                 }
                 str += *m_pos++;
                 return std::move(Token(TokenId::Or, str));
@@ -682,6 +688,7 @@ public:
 
             case Opcode::OpIn:
             case Opcode::OpJoin:
+            case Opcode::OpSep:
                 arg0->ChangeType(XmlType::String);
                 break;
 

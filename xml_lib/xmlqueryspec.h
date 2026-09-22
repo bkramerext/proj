@@ -66,10 +66,12 @@ public:
     struct OutputSpec {
         OutputSpec()
             : header(true)
+            , separator("\t") // default output separator; override with sep[value] or --sep=value
         {
         }
 
         bool header;
+        std::string separator;
     };
 
     // JoinSpec is on behalf of the LHS of the join.  For the RHS, we create another instance
@@ -634,6 +636,25 @@ private:
                 m_outputSpec.header = (numArgs == 0 || expr->GetArg(0)->GetValue().bval);
                 break;
 
+            case Opcode::OpSep: {
+                // Note: a backslash escape like \t typed here (quoted or not) can't reach this
+                // point intact -- both the quoted-string and unquoted-identifier tokenizers
+                // resolve \<char> down to the literal character before this code ever runs (e.g.
+                // \t becomes "t", not a tab), so there's nothing to unescape. Since tab is already
+                // the default, and typing an actual tab character between the brackets is
+                // impractical on a command line, "tab" is recognized as a named alias instead.
+                std::string sep = expr->GetArg(0)->GetValue().sval;
+                std::string sepLower = sep;
+                if (XmlUtils::ToLower(sepLower) == "tab") {
+                    sep = "\t";
+                }
+                if (sep.empty()) {
+                    XmlUtils::Error("sep[] requires a non-empty separator");
+                }
+                m_outputSpec.separator = sep;
+                break;
+            }
+
             case Opcode::OpHelp:
                 m_flags |= ShowUsage;
                 break;
@@ -1170,7 +1191,14 @@ private:
         if (!startTokenOptional || Lookahead(0).id == startToken) {
             token = GetExpectedNext(startToken);
         }
-        Unexpect(Lookahead().id, TokenId::Comma);
+        // This guard exists to reject a leading comma as an empty first argument (e.g.
+        // foo[,x]). Skip it for a single-arg-only operator (maxArgs == 1): there, comma can
+        // never be an argument-list delimiter in the first place (there's no room for a second
+        // argument), so a leading comma is just literal data for an unquoted-string argument,
+        // e.g. sep[,] to use a comma as the output separator.
+        if (op->maxArgs != 1) {
+            Unexpect(Lookahead().id, TokenId::Comma);
+        }
         if (Lookahead().id == endToken) {
             GetExpectedNext(endToken);
         }
@@ -1182,7 +1210,13 @@ private:
                 if ((id != TokenId::StringLiteral) && (id != TokenId::NumberLiteral) &&
                     ((expr->GetNumArgs() == 1 && op->flags & XmlOperator::OpFlags::UnquotedStringFirstArg) ||
                     (expr->GetNumArgs() == 2 && op->flags & XmlOperator::OpFlags::UnquotedStringSecondArg))) {
-                        ParseUnquotedString(arg, endToken, TokenId::Comma);
+                        // Only stop at a comma if a subsequent argument could actually follow (e.g.
+                        // join[path,true]); for a single-arg-only directive like sep[value], there's
+                        // no second argument to protect, so a literal comma is part of the value
+                        // itself (e.g. sep[,] to use a comma as the output separator).
+                        TokenId alternative =
+                            (op->maxArgs > expr->GetNumArgs()) ? TokenId::Comma : TokenId::None;
+                        ParseUnquotedString(arg, endToken, alternative);
                     }
                 else {
                     ParseExpr(arg);

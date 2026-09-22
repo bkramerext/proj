@@ -1,2 +1,4 @@
 # parent[x] is shorthand for nodename[x,1]
 --in=nums.json json.*.* parent[json.*.*]
+
+--sep=,

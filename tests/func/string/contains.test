@@ -1,1 +1,2 @@
 --in=containsdata.csv a b contains[a,b]
+--sep=,

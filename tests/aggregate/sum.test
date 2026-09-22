@@ -1,1 +1,3 @@
 --in=data.csv sum[a] sum[b] sum[a]+sum[b] sum[a+b]
+
+--sep=,

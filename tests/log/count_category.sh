@@ -1,3 +1,3 @@
 #!/bin/sh
- cat simple1.log simple2.log | proj category count[category]
+ cat simple1.log simple2.log | proj category count[category] --sep=,
  

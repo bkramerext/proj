@@ -42,6 +42,7 @@ public:
         : m_parser(new XmlParser)
         , m_inputHeader(false)
         , m_outputHeader(false)
+        , m_outputSeparator("\t")
     {
     }
 
@@ -172,6 +173,7 @@ private:
         m_inputFilename = querySpec->GetInputSpec().filename;
         m_inputHeader = querySpec->GetInputSpec().header;
         m_outputHeader = querySpec->GetOutputSpec().header;
+        m_outputSeparator = querySpec->GetOutputSpec().separator;
         if (querySpec->GetNumValueColumns() == 0 && !querySpec->IsFlagSet(XmlQuerySpec::HasPivot)) {
             m_parser->SetFlags(XmlParser::All); // if no output columns specified, then echo input xml
         }
@@ -619,10 +621,10 @@ private:
                     continue;
                 }
                 if (!first) {
-                    *m_output << ",";
+                    *m_output << m_outputSeparator;
                 }
                 first = false;
-                *m_output << XmlUtils::FormatForCsv(column->name);
+                *m_output << XmlUtils::FormatForCsv(column->name, m_outputSeparator);
             }
             *m_output << '\n';
             m_outputHeader = false;
@@ -642,7 +644,8 @@ private:
                 if (m_values.size() == 0) {
                     m_values.resize(1);
                 }
-                m_values[0] = std::move(XmlUtils::FormatForCsv(origValue.ToString(XmlValue::SubsecondTimes)));
+                m_values[0] = std::move(
+                    XmlUtils::FormatForCsv(origValue.ToString(XmlValue::SubsecondTimes), m_outputSeparator));
 
                 for (std::vector<std::string>::iterator it = m_values.begin(); it != m_values.end(); it++) {
                     std::string& value = *it;
@@ -670,7 +673,7 @@ private:
                         value = pivot.str();
                     }
                     if (!first) {
-                        *m_output << ",";
+                        *m_output << m_outputSeparator;
                     }
                     first = false;
                     *m_output << value;
@@ -684,6 +687,7 @@ private:
     std::string m_inputFilename;
     bool m_inputHeader;
     bool m_outputHeader;
+    std::string m_outputSeparator;
     std::vector<std::string> m_values; // scratch string vector for output
     std::unique_ptr<std::istream> m_input;
     std::unique_ptr<std::ostream> m_output;

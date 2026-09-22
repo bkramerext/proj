@@ -1,1 +1,3 @@
 --in=datetime.xml dt datetime[dt] sort[datetime[dt]] where[dt..sort]
+
+--sep=,

@@ -1,1 +1,3 @@
 --in=values.csv a b a>b b>a gt[a,b] gt[b,a]
+
+--sep=,

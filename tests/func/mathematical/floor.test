@@ -1,1 +1,3 @@
 --in=math1.xml where[a..f=="floor"] a floor[a]
+
+--sep=,

@@ -1,1 +1,3 @@
 --in=foo.tsv a b c
+
+--sep=,

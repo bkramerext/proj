@@ -781,17 +781,11 @@ inline XmlValue FormatTimestamp(const XmlValue& ts, bool inMilliseconds = false)
         if (decPos != nullptr) {
             fractionalms = decPos + 1;
         }
-        // A signed parse matters here: a negative (pre-1970) value divided while still
-        // unsigned would first wrap around via strtoull's two's-complement-style negation
-        // (e.g. strtoull("-100000000") silently becomes a huge positive value close to
-        // 2^64, not an error), then that wrapped value's division by 1000 no longer
-        // corresponds to dividing the original signed value at all -- producing a wildly
-        // wrong, nonsensical date instead of the correct pre-1970 one.
+        // Must parse signed: strtoull on a negative string wraps via two's-complement instead
+        // of erroring, and dividing that wrapped value by 1000 doesn't correspond to dividing
+        // the original value at all.
         long long val = std::strtoll(input.c_str(), nullptr, 0);
-        // C's / and % truncate toward zero, which gives a negative ms remainder for a
-        // negative val that isn't an exact multiple of 1000 (e.g. -1500 -> sec=-1, ms=-500).
-        // Floor instead, so ms always lands in [0, 999] and sec is the second that val's
-        // sub-second component falls within.
+        // Floor rather than C's truncate-toward-zero, so ms stays in [0, 999] for a negative val.
         sec = val / 1000;
         ms = (int)(val % 1000);
         if (ms < 0) {
@@ -820,11 +814,6 @@ inline XmlValue FormatTimestamp(const XmlValue& ts, bool inMilliseconds = false)
     return XmlValue(std::move(std::string(s)));
 }
 
-// Formats a number with thousands separators inserted into the integer part, e.g.
-// 1234567 -> "1,234,567" and 1234567.89 -> "1,234,567.89". A leading minus sign is
-// preserved and not counted when grouping digits. Whole numbers are formatted with
-// no decimal point at all (as an integer would be), rather than inheriting a
-// trailing ".0" from real-number formatting.
 inline XmlValue FormatWithThousandsSeparators(const XmlValue& value)
 {
     std::string input = (value.rval == floor(value.rval) && fabs(value.rval) < 9.2e18)

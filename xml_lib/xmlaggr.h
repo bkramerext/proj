@@ -71,9 +71,6 @@ public:
         m_cov.Update(value1, value2);
     }
 
-    // AllIntegral() reports whether every value passed to Update() so far is a whole number.
-    // Used by sum/min/max to decide, once the full group is known, whether to format the
-    // aggregate as an integer (no trailing ".0") instead of always defaulting to real.
     bool AllIntegral() const
     {
         return m_v1.m_allIntegral;
@@ -156,9 +153,6 @@ private:
             }
             m_sum += x;
             m_sum_sq += x * x;
-            // A value counts as integral if it's a whole number representable exactly as
-            // an int64 (guards against huge magnitudes where the fractional/whole distinction
-            // isn't meaningful in double precision).
             if (m_allIntegral && (fabs(x) >= 9.2e18 || x != floor(x))) {
                 m_allIntegral = false;
             }

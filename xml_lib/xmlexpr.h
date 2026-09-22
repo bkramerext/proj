@@ -1219,7 +1219,7 @@ public:
                 expr->SetValue(FormatTimestamp(arg0, true));
                 break;
 
-            case Opcode::OpComma: // insert thousands separators, e.g. 1234567 -> "1,234,567"
+            case Opcode::OpComma:
                 expr->SetValue(FormatWithThousandsSeparators(arg0));
                 break;
 

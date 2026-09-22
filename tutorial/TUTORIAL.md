@@ -1,19 +1,18 @@
 ### 0. Introduction
 
-There are 11 examples in this tutorial, and you can interactively run the given **Input:** blocks and see the same thing shown in the **Output:** blocks.
+This tutorial consists of 11 steps. Each shows an **Input** command and the **Output** it produces; run them from the `tutorial` directory to follow along.
 
-This tutorial is intended to be interactively executed from the `tutorial` subdirectory. 
-
-While **proj** works with semi-structured text files, i.e. XML and JSON, we focus on mainly on the command syntax and and querying abilities with provided CSV files.  As long as XML element (or JSON property) names match the ones used in this tutorial, those file formats would also serve as valid scenarios.  More information is forthcoming on working with these semi-structured file formats.
+**proj** works with XML and JSON as well as CSV, but this tutorial focuses on command syntax and query mechanics using the provided CSV files. Provided an XML element (or JSON property) name matches the field names used here, the same queries apply unchanged to XML or JSON versions of the same data.
 
 <br>
 
 - - -
 
-### 1. Build and deploy proj (in parent directory), if not done already.
-Install clang per OS:
+### 1. Build and deploy proj (in the parent directory), if not already done.
 
-MacOS: clang is expected to be preinstalled.
+Install a compiler per OS:
+
+macOS: clang is expected to be preinstalled.
 
 Ubuntu:
 ```
@@ -21,9 +20,9 @@ sudo apt-get update
 sudo apt-get install clang libc++-dev
 ```
 
-Windows: instructions for installing clang have not yet been written.
+Windows: not yet documented.
 
-Now build proj and deploy it:
+Build and deploy:
 Input:
 ```
 make deploy
@@ -34,7 +33,7 @@ cd tutorial
 
 - - -
 
-### 2. Refer to the given names in header row.
+### 2. Examine the field names, taken from the header row.
 Input:
 ```
 cat orders.csv | head -1
@@ -48,7 +47,7 @@ Row ID,OrderID,Order Date,Ship Date,Ship Mode,Customer ID,Customer Name,Segment,
 
 - - -
 
-### 3. Look at the first five orders and customer names, using an input file rather than stdin.
+### 3. Retrieve the first five orders' dates and customer names, reading from a file rather than standard input.
 Input:
 ```
 proj --in=orders.csv Order\ Date Customer\ Name first[5]
@@ -62,19 +61,19 @@ Order Date,Customer Name
 1/5/13,Mick Brown
 1/6/13,Lycoris Saunders
 ```
-Explanation:<br> there is no difference whether we use stdin or the `--in` parameter, except in certain buffering cases where **proj** will complain.
+Explanation:<br> standard input and `--in` are equivalent, except in certain buffering cases where **proj** raises an error with standard input.
 
-**proj** does not interpret file name extensions to determine format.  Instead, the tool guesses the input format, in order, from JSON, XML, log files (using typical Log4J formatting), tab-separated (TSV), and comma-separated (CSV). By the time we interpret as CSV, any file qualifies with garbage-in-garbage-out behavior.  Embedded JSON within log files are expanded.
+**proj** does not use the file extension to determine format. Instead, it attempts to parse the input as JSON, then XML, then a Log4j-style log file, then tab-separated (TSV), then comma-separated (CSV) as a last resort, at which point any file is accepted on a garbage-in, garbage-out basis. JSON embedded within log lines is expanded automatically.
 
-`first[5]` is a "directive," i.e. a specification that does not result in its own output CSV column, that tells **proj** to only look at the first 5 rows of the input.  This is similar to `top[n]` which instead applies the cutoff after filtering and sorting has occured. 
+`first[5]` is a *directive*: a specification that filters or shapes the output without producing its own column. It restricts **proj** to the first 5 input rows. This differs from `top[n]`, which applies its cutoff after filtering and sorting have occurred.
 
-The escaping of the space allows a match against the input `Customer Name` field.  An alternative way to express this is to use curly brackets and a string: `{"Customer Name"}`.  Curly bracket representation of paths becomes necessary for dealing with ambiguous characters, such as infix operators that appear in names.  (See Step 11.)
+The escaped space allows the argument to match the input field `Customer Name`. This can also be written using curly braces and a quoted string: `{"Customer Name"}`. The brace form is required when a field name contains characters that would otherwise be interpreted as operators; see step 11.
 
 <br>
 
 - - -
 
-### 4. Provide custom header, while relaxing the case.
+### 4. Assign a custom header to a field, noting that matching is case-insensitive by default.
 Input:
 ```
 cat orders.csv | proj Date:order\ date Customer:customer\ name first[5]
@@ -88,15 +87,15 @@ Date,Customer
 1/4/13,Phillina Ober
 1/5/13,Mick Brown
 ```
-Explanation:<br> because we did not specify `--case=true` (equivalently, `case[true]`), everything is case insensitive, including path specifications, column names, and function names. 
+Explanation:<br> because `--case=true` (equivalently `case[true]`) was not specified, matching is case-insensitive throughout: field paths, column names, and function names alike.
 
-**proj** will create default column names based on their expressions.  These are overriden by preceding the column expression with `name:`.
+**proj** derives a default column name from each column's expression. Prefixing an expression with `name:` overrides this default.
 
 <br>
 
 - - -
 
-### 5. Show and then count the distinct customers.
+### 5. List, then count, the distinct customers.
 Input:
 ```
 proj --in=orders.csv name:customer\ name --distinct
@@ -109,9 +108,9 @@ Phillina Ober
 Mick Brown
 ... and 790 more rows
 ```
-Explanation:<br> all column specifcations are generally expressions, with an alternative form for traditional command line flag syntax.  It is only a stylistic consideration whether one chooses, say, `--distinct` versus `distinct[]` or `--first=5` versus` first[5]`.
+Explanation:<br> every column specification is an expression, with an alternative flag-style syntax available for convenience. Whether one writes `--distinct` or `distinct[]`, or `--first=5` or `first[5]`, is a matter of style.
 
-There is currently no support for the "COUNT DISTINCT" functionality that SQL offers.  Instead, we can make another pass by piping the result to a second invocations of **proj**:
+There is no direct equivalent of SQL's `COUNT DISTINCT`. Instead, pipe the deduplicated result into a second **proj** invocation:
 
 Input:
 ```
@@ -127,7 +126,7 @@ count[name]
 
 - - -
 
-### 6. Sum profit by segment with a custom header.
+### 6. Sum profit by segment, with a custom header.
 Input:
 ```
 cat orders.csv | proj Segment \"Profit\ in\ \$1000\'s\":\"$\"\&round[sum[profit]/1000,2]\&\"K\"
@@ -139,31 +138,32 @@ Consumer,$134.12K
 Home Office,$60.3K
 Corporate,$91.98K
 ```
-Explanation:<br> There are a number of built-in functions with documentation forthcoming (until then, see `XmlOperatorFactory` in `xml_lib/xmlop.h` for a list.)  This example uses the function `round[expr,num-dec-places]` and the infix string concatenation operator `&`.  There is also a function `concat[str1,str2]` that is equivalent to `str1&str2`.
+Explanation:<br> **proj** provides a number of built-in functions (documentation forthcoming; until then, see `XmlOperatorFactory` in `xml_lib/xmlop.h` for the full list). This example uses `round[expr, num-dec-places]` and the infix string-concatenation operator `&`. A `concat[str1, str2]` function is also available and is equivalent to `str1 & str2`.
 
-As we can see with all the character escaping clutter, we're fighting Bash a lot, which does its own tokenization of command line input before the rest is passed to **proj**.  One technique around this is to move arguments to a file, which is provided. 
+Most of the escaping above results from Bash tokenizing the command line before **proj** receives it. One way to avoid this is to move arguments into a file:
 
-Simplified input with a descending `sort` thrown in:
+Simplified, with a descending `sort` added:
 ```
 cat orders.csv | proj Segment @profitArg sort[-sum[profit]]
 ```
 Output:
-```Segment,Profit in $1000's
+```
+Segment,Profit in $1000's
 Consumer,$134.12K
 Corporate,$91.98K
 Home Office,$60.3K
 ```
-Explanation:<br> argument files, which are filenames prepended or appended with '@' are a way to reuse arguments, improve readability, and get around Bash escaping.
+Explanation:<br> argument files — filenames prefixed or suffixed with `@` — allow arguments to be reused, keep commands readable, and avoid Bash's escaping requirements.
 
 <br>
 
 - - -
 
-### 7. Query the top 10 customers that made the most orders, sorted first by descending order of number of orders, and then by customer's (first) name.
+### 7. Find the top 10 customers by order count, sorted by descending order count and then by name.
 ```
 cat orders.csv | proj Customer:Customer\ Name Orders:count[OrderID] sort[-Orders,Customer] top[10]
 ```
-Output: 
+Output:
 ```
 Customer,Orders
 William Brown,37
@@ -178,15 +178,15 @@ Zuschuss Carroll,31
 Arthur Prichep,31
 ```
 
-Explanation:<br> `sort[]` takes multiple sort values, in the order of major sort values to minor sort values. Descending sort orders are accomplished through negation. The convention used to string values in desceding order is to first coerce using as a string and then use negation: e.g. sort
+Explanation:<br> `sort[]` accepts one or more sort keys, ordered from major to minor. Prefixing a key with `-` reverses its order; for string values this is accomplished by coercing to string and negating.
 
-`count[]` is an aggregate function.  All non-aggregate columns are considered to be groups.
+`count[]` is an aggregate function. Any column that is not an aggregate is treated as a group.
 
 <br>
 
 - - -
 
-### 8. Show the total profit by state for the South region only.
+### 8. Show total profit by state, for the South region only.
 Input:
 ```
 cat orders.csv | proj State @profitArg where[region==\"South\"]
@@ -206,15 +206,15 @@ North Carolina,$-7.49K
 Mississippi,$3.17K
 Alabama,$5.79K
 ```
-Explanation:<br> string literals are given by quoted strings (escaped here due to Bash).  We are availing ourselves to case-insensitive comparisons to the region (the data uses "State") because we've not specified `--case=true`.
+Explanation:<br> string literals are quoted (escaped here because of Bash). The comparison against `region` matches case-insensitively against the data's `Region` column, since `--case=true` was not specified.
 
-`where[pred-expr]` filters the output rows where the `pred-expr` value is true or non-zero.  It is possible to express multiple constraints, either using the logical AND infix operator `&&` or with multiple `where` directives.
+`where[pred-expr]` retains only rows for which `pred-expr` evaluates to true (non-zero). Multiple constraints can be expressed with the logical-AND operator `&&`, or with multiple `where` directives.
 
 <br>
 
 - - -
 
-### 9. Filter customer names with only one order, with discussion on compounding aggregations.
+### 9. Find customers with exactly one order, and note why aggregates cannot be nested.
 Input:
 ```
 cat orders.csv | proj Name:customer\ name where[count[orderid]==1]
@@ -229,15 +229,15 @@ Carl Jackson
 Jocasta Rupert
 ```
 Discussion:<br>
-Suppose we wanted a *count* of customers who only ordered one item. Those familar with Excel's SUMIF might try to say this:
-``` 
+To obtain a *count* of customers with exactly one order, an approach modeled on Excel's SUMIF might be:
+```
 cat orders.csv | proj Name:customer\ name sum[if[count[orderid]==1,1,0]]
 ```
-But this is not supported, and we are told:
+This is not supported. **proj** returns:
 ```
 Aggregate functions cannot be composed
 ```
-Instead, pipe the result and count that result instead:
+Instead, pipe the filtered result into a second pass and count that:
 ```
 cat orders.csv | proj Name:customer\ name where[count[orderid]==1] | proj count[Name]
 ```
@@ -251,7 +251,7 @@ count[Name]
 
 - - -
 
-### 10. Use the `join` operator to produce a report of ten product returns and their reasons.
+### 10. Join the returns file to report on ten returned products and their reasons.
 Input:
 ```
 cat orders.csv | proj join[returns.csv] where[orderid==right::orderid] Product\ Name Reason:right::Reason top[10]
@@ -271,33 +271,33 @@ Belkin 6 Outlet Metallic Surge Strip,Incorrect Products Delivered
 "Bush Heritage Pine Collection 5-Shelf Bookcase, Albany Pine Finish, *Special Order",Customer Dissatified With Product
 ```
 
-Explanation:<br> there are three principal parts to this join:
-1. A `join[path]` directive providing the path to a file (XML, JSON, CSV/TSV) with the columns to be joined.
-2. Zero or more `where[pred]` constraints that relates values from the joined input with values from the main input. 
-3. The use of scoping information to differentiate between the "left" and "right" scopes: `right::path`
+Explanation:<br> a join has three principal parts:
+1. A `join[path]` directive naming the file to join against (XML, JSON, or CSV/TSV).
+2. One or more `where[pred]` constraints relating the joined file's values to the main input's.
+3. Scope prefixes distinguishing the two sides: `right::path` refers to the joined file.
 
-Note how the output prints quotation marks from the original data using a pair of quotes.
+Note that the output re-quotes literal quotation marks from the source data as doubled quotes, standard CSV escaping.
 
-**proj** will attempt to optimize joins by creating index tables to use in the evaluations of the `where` directives.
+**proj** attempts to optimize joins by building index tables for use in `where` evaluation.
 
-Only left joins are supported.  A right join is made by swapping the main and join file names.  By default, an inner join is performed. Outer joins are supported by providing an extra boolean value: `join[path,true]`.  
+Only left joins are built in; for a right join, swap which file is treated as the main input and which is joined. An inner join is performed by default. An outer join is obtained by passing a second argument: `join[path, true]`.
 
 <br>
 
 - - -
 
-### 11. Use the `join` operator and aggregate the product return reasons by product category and sub-category, sorted by category.
+### 11. Aggregate return reasons by category and sub-category, using the join again.
 
 ```
 cat orders.csv | proj Returns:join[returns.csv] where[orderid==Returns::orderid] Category {Sub-Category} count[orderid] sort[Category] outheader[false]
 ```
-Explanation:<br> The aggregations are grouped by both Category and Sub-Category (which is surrounded by braces to avoid the otherwise subtraction interpretion).  
+Explanation:<br> results are grouped by both `Category` and `Sub-Category`. The braces around `{Sub-Category}` are required so the hyphen in the name is not interpreted as subtraction.
 
-This example overrides the default scope name `right::` with `Returns::` by providing a column name on the `join` directive.
+This example also renames the join's default `right::` scope to `Returns::`, by assigning the `join` directive its own column name.
 
-The choice of `orderId` field is arbitrary; when it comes to the `count` aggregations, any field usually works.  For example, `count[Returns::Reason]` suffices.
+The field passed to `count[]` — `orderid` here — is arbitrary; any field is generally suitable for a `count` aggregate. `count[Returns::Reason]` would serve equally well.
 
-`outheader[false]` (equivalent to `--outheader=false`) tells **proj** to not output a CSV header.
+`outheader[false]` (equivalently `--outheader=false`) instructs **proj** to omit the CSV header row.
 
 <br>
 

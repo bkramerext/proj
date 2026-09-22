@@ -339,7 +339,7 @@ public:
             case Op::OpIn: return "Reads input from a file instead of standard input";
             case Op::OpJoin: return "Joins another file's rows, matched with a where[] equality condition; pass true as a second argument for an outer join";
             case Op::OpCsvOnly: return "Skips JSON/XML/log-format detection and parses the input strictly as CSV/TSV";
-            case Op::OpCase: return "Enables case-sensitive matching of field names, function names, and string comparisons (case-insensitive by default)";
+            case Op::OpCase: return "Enables case-sensitive matching (off by default)";
             case Op::OpInputHeader: return "Whether the input CSV/TSV has a header row (default: true)";
             case Op::OpJoinHeader: return "Whether the joined file has a header row (default: true)";
             case Op::OpOutputHeader: return "Whether to print a header row in the output (default: true)";
@@ -421,14 +421,10 @@ public:
             "Infix operators"
         };
 
-        std::stringstream out;
-        out << "Every operator below that takes at least one argument can be written either as a "
-               "flag, e.g. --sep=tab, or as a function, e.g. sep[tab]. The choice is a matter of "
-               "style. Infix operators (last, below) are ordinarily written inline using their "
-               "symbol instead, e.g. a+b rather than add[a,b].\n\n";
+        // {category, signature, description}
+        std::vector<std::tuple<std::string, std::string, std::string>> allEntries;
         for (auto& category : categoryOrder) {
             bool showDescriptions = (category != "Infix operators");
-            std::vector<std::pair<std::string, std::string>> entries; // {signature, description}
             for (auto& op : GetTemplates()) {
                 if (GetCategory(op->opcode) == category) {
                     std::stringstream sig;
@@ -441,24 +437,41 @@ public:
                         sig << (op->maxArgs == (size_t)-1 ? std::string("N") : std::to_string(op->maxArgs));
                         sig << (op->maxArgs == 1 && op->minArgs == 1 ? " arg]" : " args]");
                     }
-                    entries.push_back({sig.str(), showDescriptions ? GetDescription(op->opcode) : ""});
+                    allEntries.push_back({category, sig.str(), showDescriptions ? GetDescription(op->opcode) : ""});
                 }
             }
-            if (entries.empty()) {
-                continue;
+        }
+
+        // Align every description (across all categories) to the same column, based on the
+        // widest signature among entries that actually have a description -- an unusually long
+        // infix-operator signature shouldn't push everyone else's description further right,
+        // since infix operators never show one.
+        size_t widest = 0;
+        for (auto& entry : allEntries) {
+            if (!std::get<2>(entry).empty()) {
+                widest = std::max(widest, std::get<1>(entry).size());
             }
-            size_t widest = 0;
-            for (auto& entry : entries) {
-                widest = std::max(widest, entry.first.size());
+        }
+
+        std::stringstream out;
+        out << "Every operator below that takes at least one argument can be written either as a "
+               "flag, e.g. --sep=tab, or as a function, e.g. sep[tab]. The choice is a matter of "
+               "style. Infix operators (last, below) are ordinarily written inline using their "
+               "symbol instead, e.g. a+b rather than add[a,b].\n\n";
+        std::string currentCategory;
+        for (auto& entry : allEntries) {
+            const std::string& category = std::get<0>(entry);
+            const std::string& sig = std::get<1>(entry);
+            const std::string& desc = std::get<2>(entry);
+            if (category != currentCategory) {
+                out << category << ":\n";
+                currentCategory = category;
             }
-            out << category << ":\n";
-            for (auto& entry : entries) {
-                out << "  " << entry.first;
-                if (!entry.second.empty()) {
-                    out << std::string(widest - entry.first.size(), ' ') << "  " << entry.second;
-                }
-                out << "\n";
+            out << "  " << sig;
+            if (!desc.empty()) {
+                out << std::string(widest - sig.size(), ' ') << "  " << desc;
             }
+            out << "\n";
         }
         return out.str();
     }

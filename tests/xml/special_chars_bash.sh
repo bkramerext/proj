@@ -1,3 +1,4 @@
+#!/bin/sh
 proj --in=special_chars.xml \
 {1}.{2} \
 {.} \

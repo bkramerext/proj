@@ -1,7 +1,82 @@
 Example: cat tutorial/orders.csv | proj category sum[sales]
 For more information, open README.MD.
 
-Operators:
+Directives:
+  case[0-1 args]        Enables case-sensitive matching of field names, function names, and string comparisons (case-insensitive by default)
+  help                  Prints this help text
+  usage                 Prints this help text
+  csvonly[0-1 args]     Skips JSON/XML/log-format detection and parses the input strictly as CSV/TSV
+  in[1 arg]             Reads input from a file instead of standard input
+  inheader[0-1 args]    Whether the input CSV/TSV has a header row (default: true)
+  outheader[0-1 args]   Whether to print a header row in the output (default: true)
+  header[0-1 args]      Whether to print a header row in the output (default: true)
+  sep[1 arg]            Sets the output field separator (default: tab); also accepts the named alias "tab"
+  join[1-2 args]        Joins another file's rows, matched with a where[] equality condition; pass true as a second argument for an outer join
+  joinheader[0-1 args]  Whether the joined file has a header row (default: true)
+  pivot[2-3 args]       Spreads repeated values into separate output columns
+  sync[1 arg]           Emits a new output row each time the given path repeats, for combining sibling elements that don't share a common repeating parent
+  root[1 arg]           Selects the nth top-level node as the document root for path matching
+  where[1 arg]          Filters output rows to those where the given predicate is true
+  first[1 arg]          Limits to the first n input rows, before filtering and sorting
+  top[1 arg]            Limits to the top n output rows, after filtering and sorting
+  sort[1-N args]        Sorts output rows by one or more expressions; prefix an expression with - for descending
+  distinct[0-1 args]    Removes duplicate output rows
+  hidden[1 arg]         Evaluates an expression as a named intermediate value, without adding an output column for it
+Aggregate operators:
+  any[1 arg]    First non-empty value encountered in the group
+  sum[1 arg]    Sum of a numeric expression across the group
+  avg[1 arg]    Average (mean) of a numeric expression across the group
+  min[1 arg]    Smallest value of an expression across the group
+  max[1 arg]    Largest value of an expression across the group
+  var[1 arg]    Sample variance of a numeric expression across the group
+  cov[2 args]   Covariance of two numeric expressions across the group
+  corr[2 args]  Correlation coefficient of two numeric expressions across the group
+  stdev[1 arg]  Sample standard deviation of a numeric expression across the group
+  count[1 arg]  Number of rows in the group
+String operators:
+  len[1 arg]        Length of a string
+  left[2 args]      First n characters of a string
+  right[2 args]     Last n characters of a string
+  lower[1 arg]      Converts a string to lowercase
+  upper[1 arg]      Converts a string to uppercase
+  contains[2 args]  True if the first string contains the second
+  find[2 args]      Index of the second string within the first, or -1 if not found
+Math operators:
+  abs[1 arg]       Absolute value
+  floor[1 arg]     Rounds down to the nearest integer
+  ceil[1 arg]      Rounds up to the nearest integer
+  round[1-2 args]  Rounds to the given number of decimal places (0 by default)
+  min[2 args]      Smaller of two values
+  max[2 args]      Larger of two values
+  sqrt[1 arg]      Square root
+  pow[2 args]      First value raised to the power of the second
+  log[1-2 args]    Logarithm, base e unless a second argument gives the base
+  exp[1 arg]       e raised to the power of the value
+Type conversion operators:
+  type[1 arg]      Name of a value's type ("int", "real", "str", "bool", or "datetime")
+  real[1 arg]      Converts to a real (floating-point) number
+  int[1 arg]       Converts to an integer
+  bool[1 arg]      Converts to a boolean
+  str[1-2 args]    Converts to a string
+  datetime[1 arg]  Converts to a datetime value
+Structural operators:
+  ..[2 args]          Infix form (element..attribute) that accesses an XML attribute's value
+  linenum[1 arg]      Line number in the input where the matched node appears
+  depth[1 arg]        Nesting depth of the matched node
+  path[1 arg]         Fully-qualified path of the matched node
+  pivotpath[1 arg]    Pivoted path (dot-separated ancestor names) of the matched node, for use inside pivot[]
+  parent[1 arg]       Name of the immediate parent node (shorthand for nodename[path,1])
+  nodename[1-2 args]  Name of the matched node, or an ancestor N levels up if a second argument is given
+  nodenum[1-2 args]   Position of the matched node in document order, optionally relative to a named or leveled ancestor
+  nodestart[1 arg]    Byte offset in the input where the matched node begins
+  nodeend[1 arg]      Byte offset in the input where the matched node ends
+Misc operators:
+  rownum            The 1-based row number of the current output row
+  if[3 args]        Returns the second argument if the first is true, otherwise the third
+  formatsec[1 arg]  Formats a Unix timestamp in seconds as a readable date/time
+  formatms[1 arg]   Formats a Unix timestamp in milliseconds as a readable date/time
+  comma[1 arg]      Formats a number with thousands separators, e.g. comma[1234567] -> "1,234,567"
+Unary and binary operators:
   not[1 arg]
   ![1 arg]
   -[1 arg]
@@ -30,78 +105,3 @@ Operators:
   ^[2 args]
   &[2 args]
   concat[2 args]
-Math functions:
-  abs[1 arg]
-  floor[1 arg]
-  ceil[1 arg]
-  round[1-2 args]
-  min[2 args]
-  max[2 args]
-  sqrt[1 arg]
-  pow[2 args]
-  log[1-2 args]
-  exp[1 arg]
-String functions:
-  len[1 arg]
-  left[2 args]
-  right[2 args]
-  lower[1 arg]
-  upper[1 arg]
-  contains[2 args]
-  find[2 args]
-Misc functions:
-  rownum
-  if[3 args]
-  formatsec[1 arg]
-  formatms[1 arg]
-  comma[1 arg]
-Type conversion:
-  type[1 arg]
-  real[1 arg]
-  int[1 arg]
-  bool[1 arg]
-  str[1-2 args]
-  datetime[1 arg]
-Structural functions:
-  ..[2 args]
-  linenum[1 arg]
-  depth[1 arg]
-  path[1 arg]
-  pivotpath[1 arg]
-  parent[1 arg]
-  nodename[1-2 args]
-  nodenum[1-2 args]
-  nodestart[1 arg]
-  nodeend[1 arg]
-Aggregate functions:
-  any[1 arg]
-  sum[1 arg]
-  avg[1 arg]
-  min[1 arg]
-  max[1 arg]
-  var[1 arg]
-  cov[2 args]
-  corr[2 args]
-  stdev[1 arg]
-  count[1 arg]
-Directives:
-  case[0-1 args]
-  help
-  usage
-  csvonly[0-1 args]
-  in[1 arg]
-  inheader[0-1 args]
-  outheader[0-1 args]
-  header[0-1 args]
-  sep[1 arg]
-  join[1-2 args]
-  joinheader[0-1 args]
-  pivot[2-3 args]
-  sync[1 arg]
-  root[1 arg]
-  where[1 arg]
-  first[1 arg]
-  top[1 arg]
-  sort[1-N args]
-  distinct[0-1 args]
-  hidden[1 arg]

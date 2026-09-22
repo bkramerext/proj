@@ -271,84 +271,189 @@ public:
         return templates;
     }
 
-    // A short category label for a given opcode, matching the groupings documented alongside
-    // the Opcode enum above. Used only to build `-h`/help[] output; an empty string means
-    // "don't show this in help" (internal terminals like <ColumnRef>).
+    // Everything below is a StreamingXml::XmlOperator -- directives, aggregates, string/math
+    // functions, and the unary/binary symbols alike are all just "operators" with different
+    // argument conventions. These two functions exist only to group and describe them for
+    // `-h`/help[] output; an empty category means "don't show this in help" (internal terminals
+    // like <ColumnRef>).
     static std::string GetCategory(XmlOperator::Opcode opcode)
     {
         using Op = XmlOperator;
         switch (opcode) {
-            case Op::OpNeg: case Op::OpNot:
-            case Op::OpMul: case Op::OpDiv: case Op::OpMod: case Op::OpAdd: case Op::OpSub: case Op::OpConcat:
-            case Op::OpEQ: case Op::OpNE: case Op::OpLE: case Op::OpGE: case Op::OpLT: case Op::OpGT:
-            case Op::OpOr: case Op::OpXor: case Op::OpAnd:
-                return "Operators";
-
-            case Op::OpMin: case Op::OpMax: case Op::OpSqrt: case Op::OpPow: case Op::OpLog: case Op::OpExp:
-            case Op::OpAbs: case Op::OpRound: case Op::OpFloor: case Op::OpCeil:
-                return "Math functions";
-
-            case Op::OpLen: case Op::OpLeft: case Op::OpRight: case Op::OpUpper: case Op::OpLower:
-            case Op::OpContains: case Op::OpFind:
-                return "String functions";
-
-            case Op::OpFormatSec: case Op::OpFormatMs: case Op::OpComma: case Op::OpRowNum: case Op::OpIf:
-                return "Misc functions";
-
-            case Op::OpReal: case Op::OpInt: case Op::OpBool: case Op::OpStr: case Op::OpDateTime: case Op::OpType:
-                return "Type conversion";
-
-            case Op::OpPath: case Op::OpPivotPath: case Op::OpDepth: case Op::OpAttr: case Op::OpLineNum:
-            case Op::OpParent: case Op::OpNodeNum: case Op::OpNodeName: case Op::OpNodeStart: case Op::OpNodeEnd:
-                return "Structural functions";
-
-            case Op::OpAny: case Op::OpSum: case Op::OpMinAggr: case Op::OpMaxAggr: case Op::OpAvg: case Op::OpStdev:
-            case Op::OpVar: case Op::OpCov: case Op::OpCorr: case Op::OpCount:
-                return "Aggregate functions";
-
             case Op::OpFirst: case Op::OpTop: case Op::OpSort: case Op::OpPivot: case Op::OpDistinct: case Op::OpHidden:
             case Op::OpWhere: case Op::OpSync: case Op::OpRoot: case Op::OpIn: case Op::OpJoin:
             case Op::OpCsvOnly: case Op::OpCase: case Op::OpInputHeader: case Op::OpJoinHeader:
             case Op::OpOutputHeader: case Op::OpSep: case Op::OpHelp:
                 return "Directives";
 
+            case Op::OpAny: case Op::OpSum: case Op::OpMinAggr: case Op::OpMaxAggr: case Op::OpAvg: case Op::OpStdev:
+            case Op::OpVar: case Op::OpCov: case Op::OpCorr: case Op::OpCount:
+                return "Aggregate operators";
+
+            case Op::OpLen: case Op::OpLeft: case Op::OpRight: case Op::OpUpper: case Op::OpLower:
+            case Op::OpContains: case Op::OpFind:
+                return "String operators";
+
+            case Op::OpMin: case Op::OpMax: case Op::OpSqrt: case Op::OpPow: case Op::OpLog: case Op::OpExp:
+            case Op::OpAbs: case Op::OpRound: case Op::OpFloor: case Op::OpCeil:
+                return "Math operators";
+
+            case Op::OpReal: case Op::OpInt: case Op::OpBool: case Op::OpStr: case Op::OpDateTime: case Op::OpType:
+                return "Type conversion operators";
+
+            case Op::OpPath: case Op::OpPivotPath: case Op::OpDepth: case Op::OpAttr: case Op::OpLineNum:
+            case Op::OpParent: case Op::OpNodeNum: case Op::OpNodeName: case Op::OpNodeStart: case Op::OpNodeEnd:
+                return "Structural operators";
+
+            case Op::OpFormatSec: case Op::OpFormatMs: case Op::OpComma: case Op::OpRowNum: case Op::OpIf:
+                return "Misc operators";
+
+            case Op::OpNeg: case Op::OpNot:
+            case Op::OpMul: case Op::OpDiv: case Op::OpMod: case Op::OpAdd: case Op::OpSub: case Op::OpConcat:
+            case Op::OpEQ: case Op::OpNE: case Op::OpLE: case Op::OpGE: case Op::OpLT: case Op::OpGT:
+            case Op::OpOr: case Op::OpXor: case Op::OpAnd:
+                return "Unary and binary operators";
+
             default:
                 return "";
         }
     }
 
-    // Formats every named operator, grouped by category, for `-h`/help[] output.
+    // A short description for every operator outside "Unary and binary operators" (their
+    // symbols are assumed to be self-explanatory, e.g. +, ==, &&). Keyed by opcode, so
+    // synonyms sharing an opcode (e.g. help/usage) share a description too.
+    static std::string GetDescription(XmlOperator::Opcode opcode)
+    {
+        using Op = XmlOperator;
+        switch (opcode) {
+            // Directives
+            case Op::OpFirst: return "Limits to the first n input rows, before filtering and sorting";
+            case Op::OpTop: return "Limits to the top n output rows, after filtering and sorting";
+            case Op::OpSort: return "Sorts output rows by one or more expressions; prefix an expression with - for descending";
+            case Op::OpPivot: return "Spreads repeated values into separate output columns";
+            case Op::OpDistinct: return "Removes duplicate output rows";
+            case Op::OpHidden: return "Evaluates an expression as a named intermediate value, without adding an output column for it";
+            case Op::OpWhere: return "Filters output rows to those where the given predicate is true";
+            case Op::OpSync: return "Emits a new output row each time the given path repeats, for combining sibling elements that don't share a common repeating parent";
+            case Op::OpRoot: return "Selects the nth top-level node as the document root for path matching";
+            case Op::OpIn: return "Reads input from a file instead of standard input";
+            case Op::OpJoin: return "Joins another file's rows, matched with a where[] equality condition; pass true as a second argument for an outer join";
+            case Op::OpCsvOnly: return "Skips JSON/XML/log-format detection and parses the input strictly as CSV/TSV";
+            case Op::OpCase: return "Enables case-sensitive matching of field names, function names, and string comparisons (case-insensitive by default)";
+            case Op::OpInputHeader: return "Whether the input CSV/TSV has a header row (default: true)";
+            case Op::OpJoinHeader: return "Whether the joined file has a header row (default: true)";
+            case Op::OpOutputHeader: return "Whether to print a header row in the output (default: true)";
+            case Op::OpSep: return "Sets the output field separator (default: tab); also accepts the named alias \"tab\"";
+            case Op::OpHelp: return "Prints this help text";
+
+            // Aggregate operators
+            case Op::OpAny: return "First non-empty value encountered in the group";
+            case Op::OpSum: return "Sum of a numeric expression across the group";
+            case Op::OpMinAggr: return "Smallest value of an expression across the group";
+            case Op::OpMaxAggr: return "Largest value of an expression across the group";
+            case Op::OpAvg: return "Average (mean) of a numeric expression across the group";
+            case Op::OpStdev: return "Sample standard deviation of a numeric expression across the group";
+            case Op::OpVar: return "Sample variance of a numeric expression across the group";
+            case Op::OpCov: return "Covariance of two numeric expressions across the group";
+            case Op::OpCorr: return "Correlation coefficient of two numeric expressions across the group";
+            case Op::OpCount: return "Number of rows in the group";
+
+            // String operators
+            case Op::OpLen: return "Length of a string";
+            case Op::OpLeft: return "First n characters of a string";
+            case Op::OpRight: return "Last n characters of a string";
+            case Op::OpUpper: return "Converts a string to uppercase";
+            case Op::OpLower: return "Converts a string to lowercase";
+            case Op::OpContains: return "True if the first string contains the second";
+            case Op::OpFind: return "Index of the second string within the first, or -1 if not found";
+
+            // Math operators
+            case Op::OpMin: return "Smaller of two values";
+            case Op::OpMax: return "Larger of two values";
+            case Op::OpSqrt: return "Square root";
+            case Op::OpPow: return "First value raised to the power of the second";
+            case Op::OpLog: return "Logarithm, base e unless a second argument gives the base";
+            case Op::OpExp: return "e raised to the power of the value";
+            case Op::OpAbs: return "Absolute value";
+            case Op::OpRound: return "Rounds to the given number of decimal places (0 by default)";
+            case Op::OpFloor: return "Rounds down to the nearest integer";
+            case Op::OpCeil: return "Rounds up to the nearest integer";
+
+            // Type conversion operators
+            case Op::OpReal: return "Converts to a real (floating-point) number";
+            case Op::OpInt: return "Converts to an integer";
+            case Op::OpBool: return "Converts to a boolean";
+            case Op::OpStr: return "Converts to a string";
+            case Op::OpDateTime: return "Converts to a datetime value";
+            case Op::OpType: return "Name of a value's type (\"int\", \"real\", \"str\", \"bool\", or \"datetime\")";
+
+            // Structural operators
+            case Op::OpPath: return "Fully-qualified path of the matched node";
+            case Op::OpPivotPath: return "Pivoted path (dot-separated ancestor names) of the matched node, for use inside pivot[]";
+            case Op::OpDepth: return "Nesting depth of the matched node";
+            case Op::OpAttr: return "Infix form (element..attribute) that accesses an XML attribute's value";
+            case Op::OpLineNum: return "Line number in the input where the matched node appears";
+            case Op::OpParent: return "Name of the immediate parent node (shorthand for nodename[path,1])";
+            case Op::OpNodeNum: return "Position of the matched node in document order, optionally relative to a named or leveled ancestor";
+            case Op::OpNodeName: return "Name of the matched node, or an ancestor N levels up if a second argument is given";
+            case Op::OpNodeStart: return "Byte offset in the input where the matched node begins";
+            case Op::OpNodeEnd: return "Byte offset in the input where the matched node ends";
+
+            // Misc operators
+            case Op::OpFormatSec: return "Formats a Unix timestamp in seconds as a readable date/time";
+            case Op::OpFormatMs: return "Formats a Unix timestamp in milliseconds as a readable date/time";
+            case Op::OpComma: return "Formats a number with thousands separators, e.g. comma[1234567] -> \"1,234,567\"";
+            case Op::OpRowNum: return "The 1-based row number of the current output row";
+            case Op::OpIf: return "Returns the second argument if the first is true, otherwise the third";
+
+            default: return "";
+        }
+    }
+
+    // Formats every named operator, grouped by category, for `-h`/help[] output. Categories are
+    // ordered roughly most- to least-commonly needed, with the unary/binary operator symbols
+    // (+, ==, &&, and so on) last, since they're closer to syntax than to something you'd look up.
     static std::string GetHelpText()
     {
         static const std::vector<std::string> categoryOrder = {
-            "Operators", "Math functions", "String functions", "Misc functions",
-            "Type conversion", "Structural functions", "Aggregate functions", "Directives"
+            "Directives", "Aggregate operators", "String operators", "Math operators",
+            "Type conversion operators", "Structural operators", "Misc operators",
+            "Unary and binary operators"
         };
 
         std::stringstream out;
         for (auto& category : categoryOrder) {
-            std::vector<std::string> names;
+            bool showDescriptions = (category != "Unary and binary operators");
+            std::vector<std::pair<std::string, std::string>> entries; // {signature, description}
             for (auto& op : GetTemplates()) {
                 if (GetCategory(op->opcode) == category) {
-                    std::stringstream entry;
-                    entry << op->name;
+                    std::stringstream sig;
+                    sig << op->name;
                     if (op->maxArgs > 0) {
-                        entry << "[";
+                        sig << "[";
                         if (op->minArgs != op->maxArgs) {
-                            entry << op->minArgs << "-";
+                            sig << op->minArgs << "-";
                         }
-                        entry << (op->maxArgs == (size_t)-1 ? std::string("N") : std::to_string(op->maxArgs));
-                        entry << (op->maxArgs == 1 && op->minArgs == 1 ? " arg]" : " args]");
+                        sig << (op->maxArgs == (size_t)-1 ? std::string("N") : std::to_string(op->maxArgs));
+                        sig << (op->maxArgs == 1 && op->minArgs == 1 ? " arg]" : " args]");
                     }
-                    names.push_back(entry.str());
+                    entries.push_back({sig.str(), showDescriptions ? GetDescription(op->opcode) : ""});
                 }
             }
-            if (names.empty()) {
+            if (entries.empty()) {
                 continue;
             }
+            size_t widest = 0;
+            for (auto& entry : entries) {
+                widest = std::max(widest, entry.first.size());
+            }
             out << category << ":\n";
-            for (auto& n : names) {
-                out << "  " << n << "\n";
+            for (auto& entry : entries) {
+                out << "  " << entry.first;
+                if (!entry.second.empty()) {
+                    out << std::string(widest - entry.first.size(), ' ') << "  " << entry.second;
+                }
+                out << "\n";
             }
         }
         return out.str();

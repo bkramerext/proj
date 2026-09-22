@@ -771,7 +771,7 @@ inline XmlValue FormatTimestamp(const XmlValue& ts, bool inMilliseconds = false)
     std::string input = ts.ToString();
 
     double rep;
-    unsigned long long sec;
+    long long sec;
     int ms = 0;
     sscanf(input.c_str(), "%lg", &rep);
     const char* decPos = strchr(input.c_str(), '.');
@@ -781,16 +781,30 @@ inline XmlValue FormatTimestamp(const XmlValue& ts, bool inMilliseconds = false)
         if (decPos != nullptr) {
             fractionalms = decPos + 1;
         }
-        unsigned long long val = std::strtoull(input.c_str(), nullptr, 0);
-        sec = (val / 1000);
+        // A signed parse matters here: a negative (pre-1970) value divided while still
+        // unsigned would first wrap around via strtoull's two's-complement-style negation
+        // (e.g. strtoull("-100000000") silently becomes a huge positive value close to
+        // 2^64, not an error), then that wrapped value's division by 1000 no longer
+        // corresponds to dividing the original signed value at all -- producing a wildly
+        // wrong, nonsensical date instead of the correct pre-1970 one.
+        long long val = std::strtoll(input.c_str(), nullptr, 0);
+        // C's / and % truncate toward zero, which gives a negative ms remainder for a
+        // negative val that isn't an exact multiple of 1000 (e.g. -1500 -> sec=-1, ms=-500).
+        // Floor instead, so ms always lands in [0, 999] and sec is the second that val's
+        // sub-second component falls within.
+        sec = val / 1000;
         ms = (int)(val % 1000);
+        if (ms < 0) {
+            ms += 1000;
+            sec -= 1;
+        }
     }
     else {
         // input is seconds with possible milliseconds as fraction
         if (decPos != nullptr) {
             ms = atoi(decPos + 1);
         }
-        sec = std::strtoull(input.c_str(), nullptr, 0);
+        sec = std::strtoll(input.c_str(), nullptr, 0);
     }
 
     char s[64];

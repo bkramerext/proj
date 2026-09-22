@@ -312,16 +312,16 @@ public:
             case Op::OpMul: case Op::OpDiv: case Op::OpMod: case Op::OpAdd: case Op::OpSub: case Op::OpConcat:
             case Op::OpEQ: case Op::OpNE: case Op::OpLE: case Op::OpGE: case Op::OpLT: case Op::OpGT:
             case Op::OpOr: case Op::OpXor: case Op::OpAnd:
-                return "Unary and binary operators";
+                return "Infix operators";
 
             default:
                 return "";
         }
     }
 
-    // A short description for every operator outside "Unary and binary operators" (their
-    // symbols are assumed to be self-explanatory, e.g. +, ==, &&). Keyed by opcode, so
-    // synonyms sharing an opcode (e.g. help/usage) share a description too.
+    // A short description for every operator outside "Infix operators" (their symbols are
+    // assumed to be self-explanatory, e.g. +, ==, &&). Keyed by opcode, so synonyms sharing an
+    // opcode (e.g. help/usage) share a description too.
     static std::string GetDescription(XmlOperator::Opcode opcode)
     {
         using Op = XmlOperator;
@@ -411,19 +411,23 @@ public:
     }
 
     // Formats every named operator, grouped by category, for `-h`/help[] output. Categories are
-    // ordered roughly most- to least-commonly needed, with the unary/binary operator symbols
+    // ordered roughly most- to least-commonly needed, with the infix operator symbols
     // (+, ==, &&, and so on) last, since they're closer to syntax than to something you'd look up.
     static std::string GetHelpText()
     {
         static const std::vector<std::string> categoryOrder = {
             "Directives", "Aggregate operators", "String operators", "Math operators",
             "Type conversion operators", "Structural operators", "Misc operators",
-            "Unary and binary operators"
+            "Infix operators"
         };
 
         std::stringstream out;
+        out << "Every operator below that takes at least one argument can be written either as a "
+               "flag, e.g. --sep=tab, or as a function, e.g. sep[tab]. The choice is a matter of "
+               "style. Infix operators (last, below) are ordinarily written inline using their "
+               "symbol instead, e.g. a+b rather than add[a,b].\n\n";
         for (auto& category : categoryOrder) {
-            bool showDescriptions = (category != "Unary and binary operators");
+            bool showDescriptions = (category != "Infix operators");
             std::vector<std::pair<std::string, std::string>> entries; // {signature, description}
             for (auto& op : GetTemplates()) {
                 if (GetCategory(op->opcode) == category) {

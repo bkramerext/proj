@@ -1,6 +1,8 @@
 Example: cat tutorial/orders.csv | proj category sum[sales]
 For more information, open README.MD.
 
+Every operator below that takes at least one argument can be written either as a flag, e.g. --sep=tab, or as a function, e.g. sep[tab]. The choice is a matter of style. Infix operators (last, below) are ordinarily written inline using their symbol instead, e.g. a+b rather than add[a,b].
+
 Directives:
   case[0-1 args]        Enables case-sensitive matching of field names, function names, and string comparisons (case-insensitive by default)
   help                  Prints this help text
@@ -76,7 +78,7 @@ Misc operators:
   formatsec[1 arg]  Formats a Unix timestamp in seconds as a readable date/time
   formatms[1 arg]   Formats a Unix timestamp in milliseconds as a readable date/time
   comma[1 arg]      Formats a number with thousands separators, e.g. comma[1234567] -> "1,234,567"
-Unary and binary operators:
+Infix operators:
   not[1 arg]
   ![1 arg]
   -[1 arg]

@@ -1,0 +1,1 @@
+--in=../../aggregate/sum_int_format.csv g x:comma[sum[v]]

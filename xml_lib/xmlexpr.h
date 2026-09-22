@@ -602,6 +602,11 @@ public:
                 arg0->ChangeType(XmlType::Integer);
                 break;
 
+            case Opcode::OpComma:
+                expr->SetType(XmlType::String);
+                arg0->ChangeType(XmlType::Real);
+                break;
+
             case Opcode::OpRound:
                 type = ConstrainType(arg0->GetType(), XmlType::Real);
                 expr->SetType(type);
@@ -1205,6 +1210,10 @@ public:
 
             case Opcode::OpFormatMs: // given (fractional) milliseconds since 1970, get formatted datetime
                 expr->SetValue(FormatTimestamp(arg0, true));
+                break;
+
+            case Opcode::OpComma: // insert thousands separators, e.g. 1234567 -> "1,234,567"
+                expr->SetValue(FormatWithThousandsSeparators(arg0));
                 break;
 
             case Opcode::OpRound:

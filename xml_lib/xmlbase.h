@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <unordered_map>
 #include <iomanip>
@@ -803,6 +804,38 @@ inline XmlValue FormatTimestamp(const XmlValue& ts, bool inMilliseconds = false)
             ptm->tm_hour, ptm->tm_min, ptm->tm_sec, ms, fractionalms);
     }
     return XmlValue(std::move(std::string(s)));
+}
+
+// Formats a number with thousands separators inserted into the integer part, e.g.
+// 1234567 -> "1,234,567" and 1234567.89 -> "1,234,567.89". A leading minus sign is
+// preserved and not counted when grouping digits. Whole numbers are formatted with
+// no decimal point at all (as an integer would be), rather than inheriting a
+// trailing ".0" from real-number formatting.
+inline XmlValue FormatWithThousandsSeparators(const XmlValue& value)
+{
+    std::string input = (value.rval == floor(value.rval) && fabs(value.rval) < 9.2e18)
+        ? XmlUtils::ToString((__int64_t)value.rval)
+        : value.ToString();
+
+    bool negative = !input.empty() && input[0] == '-';
+    std::string digits = negative ? input.substr(1) : input;
+
+    size_t decPos = digits.find('.');
+    std::string intPart = (decPos == std::string::npos) ? digits : digits.substr(0, decPos);
+    std::string rest = (decPos == std::string::npos) ? "" : digits.substr(decPos);
+
+    std::string grouped;
+    int sinceGroup = 0;
+    for (auto it = intPart.rbegin(); it != intPart.rend(); ++it) {
+        if (sinceGroup != 0 && sinceGroup % 3 == 0) {
+            grouped.push_back(',');
+        }
+        grouped.push_back(*it);
+        sinceGroup++;
+    }
+    std::reverse(grouped.begin(), grouped.end());
+
+    return XmlValue((negative ? "-" : "") + grouped + rest);
 }
 
 class XmlPath;

@@ -3,10 +3,8 @@
 int main(int argc, char* argv[])
 {
     try {
-        // -h is handled directly, bypassing normal query parsing entirely: it's a raw single-dash
-        // flag, not an identifier the query grammar could ever tokenize as one piece (a lone '-'
-        // and 'h' are separate tokens; only '--' becomes a recognized "Option" token). help[] and
-        // its "usage" synonym remain the way to request this from inside a query, unaffected.
+        // -h can't go through normal query parsing: a lone '-' and 'h' tokenize separately
+        // (only '--' is recognized), so it's handled as a raw argv check instead.
         for (int i = 1; i < argc; i++) {
             if (std::string(argv[i]) == "-h") {
                 std::cout << "Example: cat tutorial/orders.csv | proj category sum[sales]" << std::endl;

@@ -159,9 +159,6 @@ public:
     // Note: operator instances are pointers to support aggregate operator inheritance, where state is carried.
     // (Also, in the past, external operators implemented in Win32 DLLs were supported. That functionality was
     // removed to simplify the code base.)
-    // The full operator table, keyed by neither name nor opcode alone (both GetInstance's lookup
-    // and help-text generation need to walk the whole thing). A function-local magic static, same
-    // as the array this replaced -- constructed once, on first use.
     static const std::vector<XmlOperatorPtr>& GetTemplates()
     {
         const size_t U = (size_t)-1;
@@ -271,11 +268,6 @@ public:
         return templates;
     }
 
-    // Everything below is a StreamingXml::XmlOperator -- directives, aggregates, string/math
-    // functions, and the unary/binary symbols alike are all just "operators" with different
-    // argument conventions. These two functions exist only to group and describe them for
-    // `-h`/help[] output; an empty category means "don't show this in help" (internal terminals
-    // like <ColumnRef>).
     static std::string GetCategory(XmlOperator::Opcode opcode)
     {
         using Op = XmlOperator;
@@ -319,14 +311,10 @@ public:
         }
     }
 
-    // A short description for every operator outside "Infix operators" (their symbols are
-    // assumed to be self-explanatory, e.g. +, ==, &&). Keyed by opcode, so synonyms sharing an
-    // opcode (e.g. help/usage) share a description too.
     static std::string GetDescription(XmlOperator::Opcode opcode)
     {
         using Op = XmlOperator;
         switch (opcode) {
-            // Directives
             case Op::OpFirst: return "Limits to the first n input rows, before filtering and sorting";
             case Op::OpTop: return "Limits to the top n output rows, after filtering and sorting";
             case Op::OpSort: return "Sorts output rows by one or more expressions; prefix an expression with - for descending";
@@ -346,7 +334,6 @@ public:
             case Op::OpSep: return "Sets the output field separator (default: tab); also accepts the named alias \"tab\"";
             case Op::OpHelp: return "Prints this help text";
 
-            // Aggregate operators
             case Op::OpAny: return "First non-empty value encountered in the group";
             case Op::OpSum: return "Sum of a numeric expression across the group";
             case Op::OpMinAggr: return "Smallest value of an expression across the group";
@@ -358,7 +345,6 @@ public:
             case Op::OpCorr: return "Correlation coefficient of two numeric expressions across the group";
             case Op::OpCount: return "Number of rows in the group";
 
-            // String operators
             case Op::OpLen: return "Length of a string";
             case Op::OpLeft: return "First n characters of a string";
             case Op::OpRight: return "Last n characters of a string";
@@ -367,7 +353,6 @@ public:
             case Op::OpContains: return "True if the first string contains the second";
             case Op::OpFind: return "Index of the second string within the first, or -1 if not found";
 
-            // Math operators
             case Op::OpMin: return "Smaller of two values";
             case Op::OpMax: return "Larger of two values";
             case Op::OpSqrt: return "Square root";
@@ -379,7 +364,6 @@ public:
             case Op::OpFloor: return "Rounds down to the nearest integer";
             case Op::OpCeil: return "Rounds up to the nearest integer";
 
-            // Type conversion operators
             case Op::OpReal: return "Converts to a real (floating-point) number";
             case Op::OpInt: return "Converts to an integer";
             case Op::OpBool: return "Converts to a boolean";
@@ -387,7 +371,6 @@ public:
             case Op::OpDateTime: return "Converts to a datetime value";
             case Op::OpType: return "Name of a value's type (\"int\", \"real\", \"str\", \"bool\", or \"datetime\")";
 
-            // Structural operators
             case Op::OpPath: return "Fully-qualified path of the matched node";
             case Op::OpPivotPath: return "Pivoted path (dot-separated ancestor names) of the matched node, for use inside pivot[]";
             case Op::OpDepth: return "Nesting depth of the matched node";
@@ -399,7 +382,6 @@ public:
             case Op::OpNodeStart: return "Byte offset in the input where the matched node begins";
             case Op::OpNodeEnd: return "Byte offset in the input where the matched node ends";
 
-            // Misc operators
             case Op::OpFormatSec: return "Formats a Unix timestamp in seconds as a readable date/time";
             case Op::OpFormatMs: return "Formats a Unix timestamp in milliseconds as a readable date/time";
             case Op::OpComma: return "Formats a number with thousands separators, e.g. comma[1234567] -> \"1,234,567\"";
@@ -410,9 +392,6 @@ public:
         }
     }
 
-    // Formats every named operator, grouped by category, for `-h`/help[] output. Categories are
-    // ordered roughly most- to least-commonly needed, with the infix operator symbols
-    // (+, ==, &&, and so on) last, since they're closer to syntax than to something you'd look up.
     static std::string GetHelpText()
     {
         static const std::vector<std::string> categoryOrder = {
@@ -442,10 +421,7 @@ public:
             }
         }
 
-        // Align every description (across all categories) to the same column, based on the
-        // widest signature among entries that actually have a description -- an unusually long
-        // infix-operator signature shouldn't push everyone else's description further right,
-        // since infix operators never show one.
+        // Width excludes infix operators, which never show a description.
         size_t widest = 0;
         for (auto& entry : allEntries) {
             if (!std::get<2>(entry).empty()) {
